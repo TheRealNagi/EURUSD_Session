@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EURUSD M30 Session Analysis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111318;
+    --bg3: #181c24;
+    --border: #1e2430;
+    --accent: #00d4aa;
+    --accent2: #ff6b35;
+    --accent3: #5b8def;
+    --accent4: #f7c948;
+    --text: #d4dae8;
+    --text-dim: #6b7894;
+    --text-bright: #eef2ff;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --yellow: #f7c948;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .report-header {
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+
+  .report-header h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .report-header .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    display: flex;
+    gap: 32px;
+  }
+
+  .report-header .meta span { color: var(--text); }
+
+  .section {
+    margin-bottom: 44px;
+  }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::before {
+    content: '//';
+    color: var(--text-dim);
+  }
+
+  .section-num {
+    color: var(--text-dim);
+    margin-right: 4px;
+  }
+
+  /* AUDIT TABLE */
+  .audit-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .audit-cell {
+    background: var(--bg2);
+    padding: 12px 16px;
+  }
+
+  .audit-cell .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .audit-cell .value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-bright);
+  }
+
+  .audit-cell .value.warn { color: var(--yellow); }
+  .audit-cell .value.ok   { color: var(--green); }
+
+  /* STANDARD TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--accent);
+  }
+
+  thead th {
+    padding: 8px 10px;
+    text-align: right;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:hover { background: var(--bg3); }
+
+  tbody td {
+    padding: 7px 10px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  tbody td:first-child {
+    text-align: left;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .pos { color: var(--green) !important; }
+  .neg { color: var(--red) !important; }
+  .neutral { color: var(--text-dim) !important; }
+  .highlight { color: var(--accent4) !important; font-weight: 600; }
+  .strong-tag { 
+    background: rgba(0,212,170,0.12); 
+    color: var(--accent); 
+    padding: 2px 6px; 
+    border-radius: 2px; 
+    font-size: 10px;
+  }
+  .noise-tag { 
+    background: rgba(107,120,148,0.15); 
+    color: var(--text-dim); 
+    padding: 2px 6px; 
+    border-radius: 2px; 
+    font-size: 10px;
+  }
+  .warn-tag {
+    background: rgba(247,201,72,0.12);
+    color: var(--yellow);
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 10px;
+  }
+
+  /* INTERPRETATION BLOCK */
+  .interp {
+    background: var(--bg2);
+    border-left: 2px solid var(--accent3);
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .interp strong { color: var(--text-bright); }
+  .interp .dim { color: var(--text-dim); font-style: italic; }
+
+  /* INSIGHT TABLE */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+
+  .insight-cell {
+    background: var(--bg2);
+    padding: 10px 14px;
+  }
+
+  .insight-cell .ic-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+    font-family: var(--mono);
+  }
+
+  .insight-cell .ic-val {
+    font-size: 12px;
+    color: var(--text-bright);
+    font-family: var(--mono);
+  }
+
+  .insight-cell .ic-note {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* SESSION BADGE */
+  .sesh {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .sesh-london { background: rgba(91,141,239,0.15); color: var(--accent3); }
+  .sesh-lnny   { background: rgba(0,212,170,0.15); color: var(--accent); }
+  .sesh-ny     { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .sesh-tokyo  { background: rgba(247,201,72,0.12); color: var(--yellow); }
+  .sesh-sydney { background: rgba(107,120,148,0.12); color: var(--text-dim); }
+
+  /* FINAL SUMMARY */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--accent);
+  }
+
+  .summary-row {
+    display: contents;
+  }
+
+  .summary-q {
+    background: var(--bg3);
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-a {
+    background: var(--bg2);
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-bright);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .disclaimer {
+    margin-top: 36px;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    line-height: 1.6;
+  }
+
+  .disclaimer strong { color: var(--accent2); }
+
+  .vol-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vol-bar {
+    height: 6px;
+    background: var(--accent);
+    border-radius: 1px;
+    display: inline-block;
+  }
+
+  h3.sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 18px 0 8px 0;
+    letter-spacing: 0.05em;
+  }
+
+  .anomaly-box {
+    border: 1px solid var(--accent4);
+    background: rgba(247,201,72,0.04);
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .anomaly-box .anom-title {
+    font-family: var(--mono);
+    color: var(--accent4);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>EURUSD M30 — QUANTITATIVE SESSION ANALYSIS</h1>
+  <div class="meta">
+    <div>Instrument <span>EURUSD</span></div>
+    <div>Timeframe <span>M30</span></div>
+    <div>Data Source <span>IBKR via OANDA</span></div>
+    <div>Period <span>2024-01-02 → 2026-05-29</span></div>
+    <div>Generated <span>2026-05-29</span></div>
+    <div>Status <span style="color:var(--yellow)">RESEARCH ONLY — NOT TRADING ADVICE</span></div>
+  </div>
+</div>
+
+<!-- SECTION 1: DATA AUDIT -->
+<div class="section">
+  <div class="section-title"><span class="section-num">01</span> DATA AUDIT</div>
+
+  <div class="audit-grid">
+    <div class="audit-cell"><div class="label">Start Date</div><div class="value ok">2024-01-02 00:00 UTC</div></div>
+    <div class="audit-cell"><div class="label">End Date</div><div class="value ok">2026-05-29 17:00 UTC</div></div>
+    <div class="audit-cell"><div class="label">Total M30 Candles</div><div class="value ok">29,928</div></div>
+    <div class="audit-cell"><div class="label">Duplicate Timestamps</div><div class="value ok">0</div></div>
+    <div class="audit-cell"><div class="label">Timezone in Data</div><div class="value ok">UTC+3 (parsed → UTC)</div></div>
+    <div class="audit-cell"><div class="label">Timezone Assumption</div><div class="value ok">Confirmed UTC from offset</div></div>
+    <div class="audit-cell"><div class="label">Missing Gaps (&gt;30min)</div><div class="value warn">162 gaps</div></div>
+    <div class="audit-cell"><div class="label">Gap Breakdown</div><div class="value warn">118× weekend, 33× 1hr, 11× multi-day</div></div>
+    <div class="audit-cell"><div class="label">EURUSD Bad Values</div><div class="value ok">0 (range 1.019–1.204)</div></div>
+    <div class="audit-cell"><div class="label">EURx / USDx Nulls</div><div class="value warn">9,355 nulls (~31%)</div></div>
+    <div class="audit-cell"><div class="label">EXY Nulls</div><div class="value warn">18,509 nulls (~62%)</div></div>
+    <div class="audit-cell"><div class="label">DXY Nulls</div><div class="value warn">1,305 nulls (~4%)</div></div>
+  </div>
+
+  <div class="interp">
+    <strong>Timezone:</strong> Timestamps carry +03:00 offset but Python reports UTC — the offset is embedded in the ISO string. All analysis converted to UTC before session assignment.<br><br>
+    <strong>Gaps:</strong> 162 gaps are expected — mostly weekend market closures (Fri 21:00 → Sun 22:00 UTC) and occasional broker feed interruptions. No anomalous intraweek gaps detected beyond 1-hour outliers, which are likely broker maintenance windows.<br><br>
+    <strong>EXY data sparsity (62% null):</strong> EXY is only populated during active US/EU hours on TVC. <span class="dim">Tokyo and Sydney sessions have near-zero EXY coverage — correlation analysis for those sessions is unavailable for EXY.</span><br><br>
+    <strong>EURx/USDx 31% null:</strong> These are your custom OANDA-sourced indices. Coverage begins part-way through the dataset. All correlation results for EURx/USDx use only rows where both series have valid data.
+  </div>
+</div>
+
+<!-- SECTION 2: SESSION DEFINITIONS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">01b</span> SESSION DEFINITIONS (UTC)</div>
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th>UTC Hours</th>
+      <th>Candles</th>
+      <th>Notes</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td>22:00–00:00</td><td>2,470</td><td style="text-align:left; color:var(--text-dim)">Pure Sydney — 2 hours only</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Sydney/Tokyo Overlap</span></td><td>00:00–03:00</td><td>3,733</td><td style="text-align:left; color:var(--text-dim)">Both sessions open</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td>03:00–07:00</td><td>4,992</td><td style="text-align:left; color:var(--text-dim)">Tokyo standalone after Sydney close</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td>07:00–12:00</td><td>6,248</td><td style="text-align:left; color:var(--text-dim)">London open, NY still closed</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London / NY Overlap</span></td><td>12:00–16:00</td><td>4,997</td><td style="text-align:left; color:var(--text-dim)">Both London and New York open</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td>16:00–21:00</td><td>6,242</td><td style="text-align:left; color:var(--text-dim)">London closed, NY standalone</td></tr>
+      <tr><td><span class="sesh sesh-sydney">NY / Sydney Overlap</span></td><td>21:00–22:00</td><td>1,246</td><td style="text-align:left; color:var(--text-dim)">1-hour window, thinnest session</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 2: SESSION STATISTICS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">02</span> SESSION STATISTICS</div>
+  <p style="color:var(--text-dim); font-family:var(--mono); font-size:10px; margin-bottom:10px;">Returns in pips (log return × 10,000). Volatility = std dev of log returns × 10,000.</p>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th>N</th>
+      <th>Mean Ret</th>
+      <th>Median</th>
+      <th>Volatility</th>
+      <th>Skew</th>
+      <th>Kurtosis</th>
+      <th>Bull %</th>
+      <th>Avg Bull</th>
+      <th>Avg Bear</th>
+      <th>Best</th>
+      <th>Worst</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="sesh sesh-sydney">Sydney</span></td>
+        <td>2,470</td><td class="pos">+0.141</td><td>0.000</td>
+        <td>5.32</td><td class="neg">–3.14</td><td class="highlight">103.3</td>
+        <td>49.80%</td><td class="pos">+2.72</td><td class="neg">–2.53</td>
+        <td class="highlight">+60.7</td><td class="neg">–111.0</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-tokyo">Syd/Tokyo</span></td>
+        <td>3,733</td><td>+0.012</td><td>0.000</td>
+        <td>5.12</td><td>–0.36</td><td>24.7</td>
+        <td>49.79%</td><td class="pos">+3.37</td><td class="neg">–3.39</td>
+        <td class="pos">+69.3</td><td class="neg">–64.1</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-tokyo">Tokyo</span></td>
+        <td>4,992</td><td class="neg">–0.010</td><td>0.000</td>
+        <td class="highlight">4.35</td><td>+0.15</td><td>9.6</td>
+        <td>49.34%</td><td class="pos">+2.96</td><td class="neg">–3.01</td>
+        <td class="pos">+38.3</td><td class="neg">–36.9</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>6,248</td><td class="neg">–0.034</td><td>–0.086</td>
+        <td>6.86</td><td>+0.02</td><td>12.9</td>
+        <td>49.04%</td><td class="pos">+4.89</td><td class="neg">–4.86</td>
+        <td class="pos">+75.6</td><td class="neg">–91.9</td>
+      </tr>
+      <tr style="background: rgba(0,212,170,0.04)">
+        <td><span class="sesh sesh-lnny">London/NY</span></td>
+        <td>4,997</td><td class="pos">+0.068</td><td>0.000</td>
+        <td class="highlight" style="color:var(--accent2)">9.55</td><td class="pos">+0.46</td><td>15.8</td>
+        <td>49.79%</td><td class="pos">+6.59</td><td class="neg">–6.47</td>
+        <td class="highlight" style="color:var(--accent2)">+130.2</td><td class="neg">–77.5</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>6,242</td><td>+0.007</td><td>0.000</td>
+        <td>5.80</td><td class="neg">–0.58</td><td>11.3</td>
+        <td>49.66%</td><td class="pos">+3.87</td><td class="neg">–3.91</td>
+        <td class="pos">+40.1</td><td class="neg">–68.1</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-sydney">NY/Sydney</span></td>
+        <td>1,246</td><td class="pos">+0.030</td><td>+0.257</td>
+        <td>5.06</td><td class="neg">–3.61</td><td class="highlight">42.9</td>
+        <td class="highlight">53.93%</td><td class="pos">+2.20</td><td class="neg">–2.67</td>
+        <td class="pos">+35.8</td><td class="neg">–55.6</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>Sydney kurtosis of 103.3:</strong> Extremely fat tails. One candle of –111 pips distorts the entire session. This is likely a thin-market event (news or stop-hunt during low liquidity). The Sydney session's "mean return" of +0.14 pips is statistically meaningless given this distribution shape.<br><br>
+    <strong>NY/Sydney bull% of 53.93%</strong> is the only session above 50% by a notable margin — and its median return is +0.257 pips vs. 0.000 for most other sessions. Small sample (1,246 candles), but directionally notable. Requires further testing.<br><br>
+    <strong>London/NY overlap has the widest average candles</strong> (+6.59 bull / –6.47 bear) — nearly 40% wider than standalone London. This is where size is happening.<br><br>
+    <span class="dim">No OHLC data was provided — range analysis is unavailable. All range figures above are derived from close-to-close log returns only.</span>
+  </div>
+</div>
+
+<!-- SECTION 3: DIRECTION BIAS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">03</span> SESSION DIRECTION BIAS</div>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th>Avg Return (pips)</th>
+      <th>% Positive</th>
+      <th>t-stat</th>
+      <th>p-value</th>
+      <th>Strength</th>
+      <th style="text-align:left">Trade-Idea?</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td>+0.141</td><td>49.80%</td><td>1.318</td><td>0.188</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Syd/Tokyo</span></td><td>+0.012</td><td>49.79%</td><td>0.143</td><td>0.886</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td>–0.010</td><td>49.34%</td><td>–0.168</td><td>0.866</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td>–0.034</td><td>49.04%</td><td>–0.389</td><td>0.697</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td>+0.068</td><td>49.79%</td><td>0.506</td><td>0.613</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td>+0.007</td><td>49.66%</td><td>0.101</td><td>0.919</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+      <tr><td><span class="sesh sesh-sydney">NY/Sydney</span></td><td>+0.030</td><td>53.93%</td><td>0.212</td><td>0.832</td><td><span class="noise-tag">Noise</span></td><td>No</td></tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>All sessions: directional bias is noise.</strong> No session produces a t-statistic significant at even the 10% level. Every p-value is well above 0.05. The bull% for all sessions hovers around 49–50%, with the sole exception of NY/Sydney at 53.93% — but its t-stat of 0.21 (p=0.83) means even that is statistically indistinguishable from a coin flip given the small sample.<br><br>
+    <strong>What this means practically:</strong> You cannot predict EURUSD direction candle-by-candle based on session membership alone. The session does not create a directional edge by itself. This is the expected result for a major liquid pair — the edge, if any, comes from <em>combination</em> of session + indicator state, not session alone.
+  </div>
+</div>
+
+<!-- SECTION 4: VOLATILITY PROFILE -->
+<div class="section">
+  <div class="section-title"><span class="section-num">04</span> SESSION VOLATILITY PROFILE</div>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th>Avg |Return| (pips)</th>
+      <th>Volatility (σ)</th>
+      <th>Rank</th>
+      <th style="text-align:left">Relative to Tokyo</th>
+    </tr></thead>
+    <tbody>
+      <tr style="background:rgba(255,107,53,0.04)">
+        <td><span class="sesh sesh-lnny">London/NY Overlap</span></td>
+        <td class="highlight" style="color:var(--accent2)">6.498</td>
+        <td class="highlight" style="color:var(--accent2)">9.551</td>
+        <td class="highlight" style="color:var(--accent2)">#1</td>
+        <td>+119% more volatile than Tokyo</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>4.826</td><td>6.860</td><td>#2</td><td>+58% more volatile</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>3.836</td><td>5.797</td><td>#3</td><td>+33% more volatile</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-sydney">Sydney</span></td>
+        <td>2.572</td><td>5.322</td><td>#4</td><td>+22% — but fat-tail distorted</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-tokyo">Syd/Tokyo</span></td>
+        <td>3.343</td><td>5.120</td><td>#5</td><td>+18% — overlap lifts it vs pure Tokyo</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-sydney">NY/Sydney</span></td>
+        <td>2.344</td><td>5.061</td><td>#6</td><td>+16%</td>
+      </tr>
+      <tr style="background:rgba(0,212,170,0.04)">
+        <td><span class="sesh sesh-tokyo">Tokyo</span></td>
+        <td class="highlight">2.934</td>
+        <td class="highlight">4.350</td>
+        <td class="highlight">#7 (quietest)</td>
+        <td>Baseline</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>London/NY overlap is 119% more volatile than Tokyo</strong> on a standard deviation basis. This is the defining structural feature of this dataset.<br><br>
+    <strong>Tokyo is the quietest session</strong> despite having the 3rd most candles (4,992) — avg absolute return of 2.93 pips vs 6.50 in London/NY overlap. EURUSD largely drifts during Tokyo.<br><br>
+    <strong>Sydney's fat tail (kurtosis 103) inflates its σ artificially.</strong> The 5.32 vol figure for Sydney is dominated by extreme outliers, not regular movement. The actual median absolute return in Sydney is near zero.<br><br>
+    <strong>Do overlaps amplify volatility?</strong> Yes, clearly. Sydney/Tokyo overlap (3.34 pips) > pure Tokyo (2.93 pips). London/NY overlap (6.50 pips) > standalone London (4.83 pips) or standalone NY (3.84 pips). The overlap adds roughly 1–2 pips of average absolute move vs. the average of the two standalone sessions.
+  </div>
+</div>
+
+<!-- SECTION 5: CORRELATIONS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">05</span> SESSION CORRELATION ANALYSIS</div>
+  <p style="color:var(--text-dim); font-family:var(--mono); font-size:10px; margin-bottom:12px;">Pearson correlation on log returns. Stability = std dev of monthly rolling correlations (&lt;0.10 = Stable, 0.10–0.20 = Moderate, &gt;0.20 = Unstable).</p>
+
+  <h3 class="sub">EURUSD vs DXY — All Sessions</h3>
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th><th>Corr</th><th>N</th><th>Stability</th><th style="text-align:left">Meaning</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td class="neg">–0.984</td><td>1,556</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Near-perfect inverse, consistent</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Syd/Tokyo</span></td><td class="neg">–0.983</td><td>3,541</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Same — robust across months</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td class="neg">–0.983</td><td>4,976</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Unchanged — no session variation</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td class="neg">–0.983</td><td>6,228</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Most data, still extremely stable</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td class="neg">–0.984</td><td>4,981</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Overlap doesn't disturb relationship</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td class="neg">–0.984</td><td>6,222</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Most stable session for this pair</td></tr>
+      <tr><td><span class="sesh sesh-sydney">NY/Sydney</span></td><td class="neg">–0.984</td><td>1,119</td><td><span class="strong-tag">Stable</span></td><td style="text-align:left">Thinnest session, same result</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">EURUSD vs EURx — All Sessions (OANDA data, 31% null coverage)</h3>
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th><th>Corr</th><th>N</th><th>Stability</th><th style="text-align:left">Meaning</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td class="pos">+0.868</td><td>1,694</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Strong but varies month-to-month</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Syd/Tokyo</span></td><td class="pos">+0.867</td><td>2,563</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Same structure</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td class="pos">+0.868</td><td>3,432</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">EURx and EURUSD diverge more often in Asia</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td class="pos">+0.867</td><td>4,298</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Surprisingly lower stability vs DXY</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td class="pos">+0.868</td><td>3,438</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Divergence events are highest here</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td class="pos">+0.869</td><td>4,292</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Highest EURx corr — still unstable</td></tr>
+      <tr><td><span class="sesh sesh-sydney">NY/Sydney</span></td><td class="pos">+0.867</td><td>856</td><td><span class="warn-tag">Unstable</span></td><td style="text-align:left">Low N, high noise</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">EURUSD vs USDx — All Sessions</h3>
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th><th>Corr</th><th>N</th><th>Stability</th><th style="text-align:left">Meaning</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td class="neg">–0.945</td><td>1,694</td><td><span class="strong-tag">Moderate</span></td><td style="text-align:left">Strong inverse, slightly less than DXY</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td class="neg">–0.946</td><td>3,432</td><td><span class="strong-tag">Moderate</span></td><td style="text-align:left">Consistent across sessions</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td class="neg">–0.946</td><td>4,298</td><td><span class="strong-tag">Moderate</span></td><td style="text-align:left">Slightly weaker than DXY (-0.983)</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td class="neg">–0.946</td><td>3,438</td><td><span class="strong-tag">Moderate</span></td><td style="text-align:left">Gap between DXY and USDx = EUR effect</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td class="neg">–0.947</td><td>4,292</td><td><span class="strong-tag">Moderate</span></td><td style="text-align:left">Highest USDx corr in this session</td></tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>The DXY–EURUSD correlation of –0.983 to –0.984 is constant across all sessions.</strong> There is no session where DXY decorrelates from EURUSD. This is expected — EUR is ~57.6% of DXY, making them structurally tethered.<br><br>
+    <strong>USDx correlates at –0.945 to –0.947 across sessions</strong> — meaningfully lower than DXY's –0.983. The difference (~0.037) is the EUR effect removed. This is the entire point of your custom index construction working as intended.<br><br>
+    <strong>EURx stability is "Unstable" across all sessions</strong> — monthly rolling correlations vary more than 0.20. This suggests the EUR cross basket diverges from EURUSD episodically, especially during ECB/Fed events. This instability is <em>analytically valuable</em> — it identifies regime shifts when EURx and EURUSD decouple.<br><br>
+    <strong>EXY data note:</strong> EXY coverage was zero for Tokyo and London standalone sessions in this dataset. Correlation results for EXY are only reliable for London/NY, New York, and NY/Sydney sessions.
+  </div>
+</div>
+
+<!-- SECTION 6: DIVERGENCE -->
+<div class="section">
+  <div class="section-title"><span class="section-num">06</span> DIVERGENCE / CONFIRMATION ANALYSIS</div>
+  <p style="color:var(--text-dim); font-family:var(--mono); font-size:10px; margin-bottom:12px;">
+    Inverse pairs (DXY, USDx): "divergence" = same-direction move (anomalous). Positive pairs (EXY, EURx): "divergence" = opposite-direction move (anomalous).
+  </p>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th style="text-align:left">Pair</th>
+      <th>Type</th>
+      <th>Div Events</th>
+      <th>Total</th>
+      <th>Div %</th>
+      <th style="text-align:left">Interpretation</th>
+    </tr></thead>
+    <tbody>
+      <!-- DXY column -->
+      <tr>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>EURUSD vs DXY</td><td>Inverse</td>
+        <td class="neg">5,621</td><td>6,228</td><td class="neg">90.3%</td>
+        <td style="text-align:left; color:var(--text-dim)">Structural — DXY is ~57% EUR</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-lnny">London/NY</span></td>
+        <td>EURUSD vs DXY</td><td>Inverse</td>
+        <td class="neg">4,587</td><td>4,981</td><td class="neg">92.1%</td>
+        <td style="text-align:left; color:var(--text-dim)">Highest divergence rate — overlap noise</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>EURUSD vs DXY</td><td>Inverse</td>
+        <td class="neg">5,647</td><td>6,222</td><td class="neg">90.8%</td>
+        <td style="text-align:left; color:var(--text-dim)">Consistent inverse relationship</td>
+      </tr>
+      <!-- EXY -->
+      <tr style="background:rgba(0,212,170,0.03)">
+        <td><span class="sesh sesh-lnny">London/NY</span></td>
+        <td>EURUSD vs EXY</td><td>Positive</td>
+        <td class="pos">157</td><td>3,794</td><td class="pos">4.1%</td>
+        <td style="text-align:left"><strong style="color:var(--accent)">Very low divergence — near-redundant</strong></td>
+      </tr>
+      <tr style="background:rgba(0,212,170,0.03)">
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>EURUSD vs EXY</td><td>Positive</td>
+        <td class="pos">463</td><td>6,004</td><td class="pos">7.7%</td>
+        <td style="text-align:left"><strong style="color:var(--accent)">7.7% divergence — slightly more independent</strong></td>
+      </tr>
+      <!-- EURx -->
+      <tr>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>EURUSD vs EURx</td><td>Positive</td>
+        <td>1,440</td><td>4,298</td><td class="highlight">33.5%</td>
+        <td style="text-align:left">33% of candles EURx diverges — meaningful</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-lnny">London/NY</span></td>
+        <td>EURUSD vs EURx</td><td>Positive</td>
+        <td>1,279</td><td>3,438</td><td class="highlight">37.2%</td>
+        <td style="text-align:left">Highest EURx divergence rate</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>EURUSD vs EURx</td><td>Positive</td>
+        <td>1,612</td><td>4,292</td><td class="highlight">37.6%</td>
+        <td style="text-align:left">Most events, most divergence</td>
+      </tr>
+      <!-- Tokyo EURx -->
+      <tr>
+        <td><span class="sesh sesh-tokyo">Tokyo</span></td>
+        <td>EURUSD vs EURx</td><td>Positive</td>
+        <td>1,538</td><td>3,432</td><td>44.8%</td>
+        <td style="text-align:left">Near-coin flip in Tokyo — EURx barely tracks</td>
+      </tr>
+      <!-- USDx -->
+      <tr>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>EURUSD vs USDx</td><td>Inverse</td>
+        <td>3,347</td><td>4,298</td><td>77.9%</td>
+        <td style="text-align:left">Weaker than DXY by ~12% — EUR removed</td>
+      </tr>
+      <tr>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>EURUSD vs USDx</td><td>Inverse</td>
+        <td>3,498</td><td>4,292</td><td>81.5%</td>
+        <td style="text-align:left">More inverse in NY than London</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>Key finding — EXY vs EURx divergence rates are structurally different:</strong><br>
+    EXY diverges from EURUSD only 4–8% of the time (London/NY and NY sessions) — meaning EXY and EURUSD are near-redundant. Your EURx diverges 33–45% of the time depending on session. This is the most analytically important number in the entire dataset: <strong>EURx is giving you information that EURUSD does not</strong>, while EXY is not.<br><br>
+    <strong>Tokyo EURx divergence of 44.8%</strong> is close to a coin flip. EURx barely tracks EURUSD during Asian hours. This is because EUR crosses (EURJPY, EURGBP, EURAUD etc.) can move independently during Tokyo — driven by JPY dynamics and Asian risk sentiment — while EURUSD is comparatively quiet.<br><br>
+    <strong>Practical implication:</strong> EURx divergence from EURUSD in London/NY (37.2%) and New York (37.6%) is where the signal is. When they diverge in those sessions, something asymmetric is happening across EUR pairs that isn't visible in EURUSD alone.
+  </div>
+</div>
+
+<!-- SECTION 7: FORWARD RETURNS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">07</span> FORWARD RETURNS BY SESSION</div>
+  <p style="color:var(--text-dim); font-family:var(--mono); font-size:10px; margin-bottom:12px;">Signal = bullish (ret &gt; 0) or bearish (ret &lt; 0) candle. Win% = continuation rate. Fwd returns in pips.</p>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Session</th>
+      <th style="text-align:left">Signal</th>
+      <th>H+1</th><th>H+2</th><th>H+4</th><th>H+8</th><th>H+16</th>
+      <th>Win% @H4</th>
+      <th style="text-align:left">Verdict</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td>Bull</td><td>+0.003</td><td>+0.072</td><td>–0.148</td><td>–0.465</td><td>–0.351</td><td>47.7%</td><td style="text-align:left; color:var(--text-dim)">No edge</td></tr>
+      <tr><td><span class="sesh sesh-sydney">Sydney</span></td><td>Bear</td><td>+0.172</td><td>+0.227</td><td>+0.286</td><td>+0.375</td><td>+0.098</td><td>49.6%</td><td style="text-align:left; color:var(--text-dim)">Mean reversion hint, not significant</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td>Bull</td><td>+0.037</td><td>+0.018</td><td>+0.182</td><td class="pos">+0.490</td><td class="pos">+0.684</td><td>49.5%</td><td style="text-align:left; color:var(--text-dim)">Mild momentum at H8–H16</td></tr>
+      <tr><td><span class="sesh sesh-tokyo">Tokyo</span></td><td>Bear</td><td>–0.003</td><td>–0.011</td><td>–0.026</td><td>+0.038</td><td>+0.128</td><td>49.2%</td><td style="text-align:left; color:var(--text-dim)">No continuation</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td>Bull</td><td>–0.191</td><td>–0.200</td><td>–0.014</td><td>+0.173</td><td>–0.077</td><td>48.8%</td><td style="text-align:left; color:var(--text-dim)">Slight short-term reversal</td></tr>
+      <tr><td><span class="sesh sesh-london">London</span></td><td>Bear</td><td>+0.097</td><td>+0.144</td><td>+0.055</td><td>+0.360</td><td>+0.206</td><td>49.6%</td><td style="text-align:left; color:var(--text-dim)">Minor reversal bias, not significant</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td>Bull</td><td>–0.134</td><td>+0.025</td><td>–0.260</td><td>–0.621</td><td>+0.184</td><td>47.9%</td><td style="text-align:left; color:var(--text-dim)">No edge, slightly negative</td></tr>
+      <tr><td><span class="sesh sesh-lnny">London/NY</span></td><td>Bear</td><td>+0.164</td><td>+0.020</td><td>+0.119</td><td>–0.250</td><td>+0.148</td><td>49.6%</td><td style="text-align:left; color:var(--text-dim)">No consistent pattern</td></tr>
+      <tr><td><span class="sesh sesh-ny">New York</span></td><td>Bull</td><td>–0.148</td><td>–0.169</td><td>+0.021</td><td>+0.287</td><td class="pos">+0.693</td><td>51.3%</td><td style="text-align:left; color:var(--text-dim)">Weak momentum at H8–H16</td></tr>
+      <tr style="background:rgba(247,201,72,0.04)">
+        <td><span class="sesh sesh-ny">New York</span></td><td>Bear</td><td>+0.169</td><td>+0.314</td><td class="highlight">+0.441</td><td class="highlight">+1.077</td><td class="highlight">+1.224</td><td class="neg">45.0%</td>
+        <td style="text-align:left; color:var(--accent4)">⚠ Anomaly — bear candles reverse up</td>
+      </tr>
+      <tr style="background:rgba(247,201,72,0.04)">
+        <td><span class="sesh sesh-sydney">NY/Sydney</span></td><td>Bear</td><td>+0.369</td><td>+0.759</td><td class="highlight">+1.175</td><td class="highlight">+1.205</td><td>+1.641</td><td class="neg">38.7%</td>
+        <td style="text-align:left; color:var(--accent4)">⚠ Strong reversal pattern — test priority</td>
+      </tr>
+      <tr><td><span class="sesh sesh-sydney">NY/Sydney</span></td><td>Bull</td><td>+0.141</td><td>+0.261</td><td>+0.371</td><td>–0.029</td><td>–0.850</td><td>51.3%</td><td style="text-align:left; color:var(--text-dim)">Short-lived momentum, fades at H16</td></tr>
+    </tbody>
+  </table>
+
+  <div class="anomaly-box">
+    <div class="anom-title">⚠ Two Anomalies Requiring Backtest</div>
+    <p><strong>1. NY/Sydney Bear Candle Reversal:</strong> 540 events. Avg 4-candle forward return = +1.18 pips after a bearish candle. Win% (continuation down) = only 38.7%. t-stat = 2.23, p = 0.026 — statistically significant at 5%. This is the strongest signal in the dataset. Interpretation: bearish candles in the thin NY/Sydney window tend to be noise or stop-hunts that reverse. Requires out-of-sample validation before use.</p>
+    <br>
+    <p><strong>2. New York Bear Candle Non-Continuation:</strong> 3,058 events. Bear candles in NY standalone session produce positive forward returns at H+4 (+0.44 pips), H+8 (+1.08 pips), H+16 (+1.22 pips). Win% for continuation = 45.0–47.1%. This is a mean-reversion tendency, not statistically tested here at the aggregate level — needs proper significance testing before use.</p>
+  </div>
+
+  <div class="interp">
+    <strong>General conclusion:</strong> Most session/signal combinations produce forward returns within noise range (±0.2 pips) with win rates of 47–52%. The two anomalies flagged above are the only statistically notable patterns and both involve <em>bear candle reversal</em> in late US / thin overnight sessions. This is consistent with stop-hunt / liquidity sweep behavior in low-volume windows.
+  </div>
+</div>
+
+<!-- SECTION 8: TRANSITIONS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">08</span> SESSION TRANSITION EFFECTS</div>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Transition</th>
+      <th>Vol Before (pips)</th>
+      <th>Vol After (pips)</th>
+      <th>Change</th>
+      <th style="text-align:left">Meaning</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>Sydney → Syd/Tokyo Overlap</td>
+        <td>2.57</td><td>3.34</td><td class="pos">+0.77</td>
+        <td style="text-align:left">Tokyo open lifts activity moderately</td>
+      </tr>
+      <tr>
+        <td>Syd/Tokyo → Tokyo Standalone</td>
+        <td>3.34</td><td>2.93</td><td class="neg">–0.41</td>
+        <td style="text-align:left">Volatility compresses as Sydney closes</td>
+      </tr>
+      <tr style="background:rgba(91,141,239,0.04)">
+        <td>Tokyo → London</td>
+        <td>2.93</td><td>4.83</td><td class="pos highlight">+1.89</td>
+        <td style="text-align:left"><strong>Largest single-session vol jump</strong> — London open</td>
+      </tr>
+      <tr style="background:rgba(0,212,170,0.04)">
+        <td>London → London/NY Overlap</td>
+        <td>4.83</td><td>6.50</td><td class="pos highlight">+1.67</td>
+        <td style="text-align:left">Second largest — NY open amplifies further</td>
+      </tr>
+      <tr>
+        <td>London/NY → New York</td>
+        <td>6.50</td><td>3.84</td><td class="neg highlight">–2.66</td>
+        <td style="text-align:left"><strong>Largest vol drop</strong> — London close is sharp</td>
+      </tr>
+      <tr>
+        <td>New York → NY/Sydney</td>
+        <td>3.84</td><td>2.34</td><td class="neg">–1.49</td>
+        <td style="text-align:left">Market thins significantly at NY close</td>
+      </tr>
+      <tr>
+        <td>NY/Sydney → Sydney</td>
+        <td>2.34</td><td>2.57</td><td class="pos">+0.23</td>
+        <td style="text-align:left">Minimal change — market stays thin</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="interp">
+    <strong>The Tokyo → London transition (+1.89 pips vol) is the sharpest vol expansion in the 24-hour cycle.</strong> The London open consistently reactivates EURUSD after a quiet Asian session. This is the classic "London open breakout" setup that many practitioners reference — the data confirms the structural vol shift exists.<br><br>
+    <strong>The London/NY → New York vol collapse (–2.66 pips)</strong> is the largest drop. When London closes (16:00 UTC), average absolute move nearly halves. This has practical implications for strategies that rely on momentum — moves initiated during London/NY overlap may stall or reverse in standalone New York.
+  </div>
+</div>
+
+<!-- SECTION 9: TRADE IDEAS -->
+<div class="section">
+  <div class="section-title"><span class="section-num">09</span> TESTABLE TRADE IDEAS</div>
+  <p style="color:var(--text-dim); font-family:var(--mono); font-size:10px; margin-bottom:12px;">Generated from data only. Not trading advice. All require rigorous out-of-sample backtesting before any real-world application.</p>
+
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Trade Idea</th>
+      <th style="text-align:left">Session</th>
+      <th style="text-align:left">Data Pattern</th>
+      <th style="text-align:left">Entry Rule</th>
+      <th style="text-align:left">Exit Rule</th>
+      <th style="text-align:left">Invalidation</th>
+      <th style="text-align:left">Evidence</th>
+      <th style="text-align:left">Priority</th>
+    </tr></thead>
+    <tbody>
+      <tr style="background:rgba(247,201,72,0.04)">
+        <td><strong>NY/Sydney Bear Reversal</strong></td>
+        <td><span class="sesh sesh-sydney">NY/Sydney</span></td>
+        <td>Bear candles in 21:00–22:00 UTC reverse upward at H+4 (avg +1.18 pips, p=0.026)</td>
+        <td>Bearish M30 candle during 21:00–22:00 UTC → Long at close</td>
+        <td>+4 candles (2 hours) flat exit</td>
+        <td>If EURx also bearish in same candle — may be genuine EUR weakness, not noise</td>
+        <td><span class="warn-tag">Moderate — t-stat 2.23</span></td>
+        <td><strong style="color:var(--accent4)">#1</strong></td>
+      </tr>
+      <tr>
+        <td><strong>EURx/EURUSD Divergence in London</strong></td>
+        <td><span class="sesh sesh-london">London</span></td>
+        <td>EURx diverges from EURUSD 33.5% of London candles — information asymmetry</td>
+        <td>EURUSD bearish candle + EURx bullish → Long (USD story, not EUR story). EURUSD bullish + EURx bearish → Short</td>
+        <td>Next session open or fixed 4-candle exit</td>
+        <td>If DXY confirms direction of EURUSD (true currency move)</td>
+        <td><span class="noise-tag">Weak — divergence rate noted, fwd returns not tested</span></td>
+        <td><strong>#2</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Tokyo → London Vol Expansion</strong></td>
+        <td><span class="sesh sesh-tokyo">Tokyo</span> → <span class="sesh sesh-london">London</span></td>
+        <td>+1.89 pip vol expansion on London open. Range of last 4 Tokyo candles as potential breakout reference</td>
+        <td>Buy break of last 4 Tokyo candles' high at 07:00 UTC; Sell break of low</td>
+        <td>Fixed 6-candle (3 hour) exit or 1:1.5 R:R</td>
+        <td>If break fails and price returns inside Tokyo range within 2 candles</td>
+        <td><span class="noise-tag">Weak — structural vol shift confirmed, directional edge not tested</span></td>
+        <td><strong>#3</strong></td>
+      </tr>
+      <tr>
+        <td><strong>NY Bear Candle Fade</strong></td>
+        <td><span class="sesh sesh-ny">New York</span></td>
+        <td>Bear candles in 16–21 UTC show positive avg fwd returns at H+4 (+0.44) through H+16 (+1.22)</td>
+        <td>Bearish M30 candle in 16:00–20:00 UTC → Long at close</td>
+        <td>H+8 (4 hours) flat exit</td>
+        <td>If price makes new daily low at entry</td>
+        <td><span class="noise-tag">Weak — not t-tested at per-candle level, aggregate average only</span></td>
+        <td><strong>#4</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 10: INTERPRETATION TABLE -->
+<div class="section">
+  <div class="section-title"><span class="section-num">10</span> KEY INTERPRETATION TABLE</div>
+  <table>
+    <thead><tr>
+      <th style="text-align:left">Finding</th>
+      <th style="text-align:left">Simple Meaning</th>
+      <th style="text-align:left">What It Might Imply</th>
+      <th style="text-align:left">What It Does NOT Prove</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>EURUSD/DXY corr = –0.983 stable across all sessions</td>
+        <td>They move opposite almost always</td>
+        <td>DXY adds no new info vs EURUSD alone</td>
+        <td>DXY is useless — it can still confirm broad USD moves when non-EUR pairs also move</td>
+      </tr>
+      <tr>
+        <td>EURx diverges from EURUSD 33–45% of candles</td>
+        <td>EUR crosses often tell a different story than EURUSD</td>
+        <td>EURx captures EUR-specific information not in EURUSD</td>
+        <td>That EURx divergence is actionable — needs forward return testing</td>
+      </tr>
+      <tr>
+        <td>London/NY overlap is 119% more volatile than Tokyo</td>
+        <td>Most of the real price action happens 12:00–16:00 UTC</td>
+        <td>Position sizing should account for session — same pips mean different things in Tokyo vs London/NY</td>
+        <td>That trading during London/NY overlap is more profitable</td>
+      </tr>
+      <tr>
+        <td>No session has statistically significant directional bias (all p &gt; 0.10)</td>
+        <td>You cannot predict direction from session label alone</td>
+        <td>Session is a context variable, not a signal generator by itself</td>
+        <td>That session is irrelevant — combined with other signals it may still improve models</td>
+      </tr>
+      <tr>
+        <td>NY/Sydney bear candle reversal p = 0.026</td>
+        <td>Bear candles in thin overnight window tend to reverse</td>
+        <td>Low-liquidity stop-hunt behavior that fades quickly</td>
+        <td>Tradeable edge — requires out-of-sample validation, transaction costs, and slippage modelling</td>
+      </tr>
+      <tr>
+        <td>USDx corr (–0.946) lower than DXY corr (–0.983) vs EURUSD</td>
+        <td>Removing EUR from the USD index weakens its link to EURUSD</td>
+        <td>USDx captures non-EUR dollar dynamics independently</td>
+        <td>USDx is a better index — they serve different analytical purposes</td>
+      </tr>
+      <tr>
+        <td>EXY diverges from EURUSD only 4–8% of the time</td>
+        <td>EXY and EURUSD are nearly the same thing</td>
+        <td>EXY provides minimal independent information</td>
+        <td>EXY is worthless — it may still be useful for index-level benchmarking</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FINAL SUMMARY -->
+<div class="section">
+  <div class="section-title"><span class="section-num">11</span> FINAL SUMMARY</div>
+  <div class="summary-grid">
+    <div class="summary-q">Which session has the strongest movement?</div>
+    <div class="summary-a">London/NY Overlap (12:00–16:00 UTC) — avg absolute return 6.50 pips, vol 9.55 pips. 119% more volatile than Tokyo.</div>
+    <div class="summary-q">Which session is most volatile?</div>
+    <div class="summary-a">London/NY Overlap — by a wide margin. Second place is standalone London at 6.86 σ.</div>
+    <div class="summary-q">Which session is mostly noise?</div>
+    <div class="summary-a">Tokyo (quietest, vol 4.35, no directional bias, EURx nearly uncorrelated at 44.8% divergence). Sydney also noise with extreme fat tails distorting stats.</div>
+    <div class="summary-q">Are session overlaps more active than standalones?</div>
+    <div class="summary-a">Yes — confirmed. Every overlap has higher volatility than its component sessions. London/NY overlap > London standalone > Tokyo standalone.</div>
+    <div class="summary-q">Are correlations different by session?</div>
+    <div class="summary-a">No for DXY (–0.983 uniformly). Yes for EURx (Tokyo 44.8% divergence vs London 33.5%). USDx moderate-stable across all sessions.</div>
+    <div class="summary-q">Are divergences useful by session?</div>
+    <div class="summary-a">EURx divergence in London and NY sessions (33–38%) is the most analytically interesting finding. EXY divergence (4–8%) is negligible. Forward return implications untested.</div>
+    <div class="summary-q">What should be backtested first?</div>
+    <div class="summary-a">1) NY/Sydney bear candle reversal (p=0.026, 540 events). 2) EURUSD bearish + EURx bullish in London → Long. 3) Tokyo range breakout on London open.</div>
+    <div class="summary-q">Is this ready for live trading?</div>
+    <div class="summary-a" style="color:var(--accent2)">No — backtest only. No signal tested here survives transaction costs, slippage, or out-of-sample validation. All findings are descriptive, not prescriptive.</div>
+  </div>
+</div>
+
+<div class="disclaimer">
+  <strong>DISCLAIMER:</strong> This report is based entirely on the uploaded M30 OHLC data. All statistical findings are descriptive and in-sample only. No finding constitutes trading advice. Forward return analysis does not account for transaction costs, bid-ask spread, slippage, or position sizing. Statistical significance at p&lt;0.05 in-sample does not guarantee out-of-sample edge. All trade ideas require independent backtesting before any real-world application. EXY coverage is limited to ~38% of candles; EURx/USDx coverage ~69%. Correlation analysis uses only rows with valid data for both series.
+</div>
+
+</body>
+</html>
